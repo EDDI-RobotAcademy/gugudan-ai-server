@@ -1,8 +1,8 @@
 services:
   # 1. FastAPI 앱
   fastapi:
-    image: ghcr.io/${REPO_USER}/gugudan-ai-server:latest
-    container_name: gugudan-ai-server
+    image: ghcr.io/${REPO_USER}/gugudan-server:latest
+    container_name: gugudan-server
     ports:
       - "33333:33333"  # 호스트 33333 -> 컨테이너 33333
     env_file:
