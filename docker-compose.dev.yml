@@ -1,10 +1,12 @@
 services:
-  # 1. FastAPI 앱
+  # 1. FastAPI App (build locally)
   fastapi:
-    image: ghcr.io/${REPO_USER}/gugudan-ai-server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: gugudan-ai-server
     ports:
-      - "33333:33333"  # 호스트 33333 -> 컨테이너 33333
+      - "33333:33333"
     env_file:
       - .env
     depends_on:
@@ -13,12 +15,22 @@ services:
     restart: always
     networks:
       - backend_net
+    # For development: mount source code for hot reload
+    volumes:
+      - .:/app
+    # Override CMD to use uvicorn with reload
+    command: >
+      /wait-for-it.sh mysql:3306 --
+      /wait-for-it.sh redis:6379 --
+      python -m uvicorn app.main:app --host 0.0.0.0 --port 33333 --reload
 
   # 2. MySQL
   mysql:
-    image: mysql:8.1
-    container_name: gugudan_mysql
+    image: mysql:8
+    container_name: mysql-container
     restart: always
+    env_file:
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -33,8 +45,8 @@ services:
 
   # 3. Redis
   redis:
-    image: redis:8.2
-    container_name: gugudan_redis
+    image: redis:latest
+    container_name: redis-container
     restart: always
     ports:
       - "6379:6379"
@@ -43,12 +55,12 @@ services:
     networks:
       - backend_net
 
-# 볼륨 정의
+# Volume definitions
 volumes:
   mysql_data:
   redis_data:
 
-# 네트워크 정의
+# Network definitions
 networks:
   backend_net:
     driver: bridge

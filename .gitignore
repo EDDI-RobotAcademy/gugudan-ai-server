@@ -403,30 +403,25 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,pycharm+iml,pycharm+all,python
 
-# exclude
-*.pdf
-
-# exclude .env
+# Environment files
 .env
+.env.local
+.env.*.local
 
-# exclude .json
-*.json
+# Docker
+docker-compose.override.yml
 
-# exclude .jinja
-*.jinja
-
-# exclude .model
+# ML Models (if applicable)
 *.safetensors
 *.model
-
-# exclude model under directory
 models/
 
-# exclude pdf
-*.pdf
-
-# exclude txt
-*.txt
-
-# exclude donwloaded_docs
+# Downloaded files
 downloaded_docs/
+
+# Logs
+logs/
+*.log
+
+# VS Code
+.vscode/
