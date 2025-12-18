@@ -141,6 +141,7 @@ async def oauth_callback(
 
     Validates state, exchanges code for token, creates session.
     """
+
     # Verify state matches cookie (CSRF protection)
     cookie_state = request.cookies.get("oauth_state")
 
@@ -176,7 +177,7 @@ async def oauth_callback(
             value=csrf_token,
             httponly=False,  # Must be readable by JavaScript
             secure=settings.COOKIE_SECURE,
-            samesite="strict",
+            samesite=settings.COOKIE_SAMESITE,
             max_age=settings.SESSION_TTL_SECONDS,
         )
 
