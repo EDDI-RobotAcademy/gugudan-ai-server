@@ -252,7 +252,8 @@ async def oauth_callback_session(
 ) -> RedirectResponse:
     """Handle OAuth callback (legacy session-based).
 
-    Validates state, exchanges code for token, creates session.
+    Validates state, exchanges code for token, creates JWT.
+    Returns JWT token in HttpOnly cookie with CSRF token.
     """
     # Verify state matches cookie (CSRF protection)
     cookie_state = request.cookies.get("oauth_state")
@@ -288,6 +289,8 @@ async def oauth_callback_session(
             key="csrf_token",
             value=csrf_token,
             httponly=False,  # Must be readable by JavaScript
+            secure=settings.COOKIE_SECURE,
+            samesite=settings.COOKIE_SAMESITE,
             secure=settings.effective_cookie_secure,
             samesite="strict",
             max_age=settings.SESSION_TTL_SECONDS,
