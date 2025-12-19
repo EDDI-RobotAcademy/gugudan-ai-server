@@ -23,6 +23,13 @@ class AccountModel(Base):
     updated_at = Column(
         DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )
+    # New columns
+    role = Column(String(30), default="USER", nullable=False)
+    plan = Column(String(30), default="FREE", nullable=False)
+    plan_started_at = Column(DateTime, nullable=True)
+    plan_ends_at = Column(DateTime, nullable=True)
+    billing_customer_id = Column(String(100), nullable=True)
+    status = Column(String(30), default="ACTIVE", nullable=False)
 
     def __repr__(self) -> str:
-        return f"<AccountModel(id={self.id}, email={self.email})>"
+        return f"<AccountModel(id={self.id}, email={self.email}, role={self.role}, plan={self.plan}, status={self.status})>"

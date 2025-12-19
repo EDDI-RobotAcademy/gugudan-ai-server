@@ -5,6 +5,7 @@ uvicorn[standard]>=0.27.0
 # Database
 pymysql>=1.1.0
 sqlalchemy>=2.0.25
+alembic>=1.13.0
 
 # Cryptography
 cryptography>=42.0.0
@@ -21,6 +22,7 @@ httpx>=0.26.0
 
 # Security
 itsdangerous>=2.1.2
+PyJWT>=2.8.0
 
 # AI/ML
 openai

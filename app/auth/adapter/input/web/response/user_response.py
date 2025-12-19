@@ -1,6 +1,7 @@
 """User response schema."""
 
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
@@ -15,6 +16,12 @@ class UserResponse(BaseModel):
     nickname: str
     terms_agreed: bool
     created_at: datetime
+    # New fields
+    role: str
+    plan: str
+    plan_started_at: Optional[datetime] = None
+    plan_ends_at: Optional[datetime] = None
+    status: str
 
     class Config:
         from_attributes = True
@@ -28,4 +35,9 @@ class UserResponse(BaseModel):
             nickname=account.nickname,
             terms_agreed=account.terms_agreed,
             created_at=account.created_at,
+            role=account.role.value,
+            plan=account.plan.value,
+            plan_started_at=account.plan_started_at,
+            plan_ends_at=account.plan_ends_at,
+            status=account.status.value,
         )

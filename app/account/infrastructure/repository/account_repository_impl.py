@@ -5,6 +5,11 @@ from typing import Optional
 from sqlalchemy.orm import Session as DBSession
 
 from app.account.domain.entity.account import Account
+from app.account.domain.entity.account_enums import (
+    AccountPlan,
+    AccountRole,
+    AccountStatus,
+)
 from app.account.application.port.account_repository_port import AccountRepositoryPort
 from app.account.infrastructure.orm.account_model import AccountModel
 
@@ -62,6 +67,13 @@ class AccountRepositoryImpl(AccountRepositoryPort):
                 model.nickname = account.nickname
                 model.terms_agreed = account.terms_agreed
                 model.terms_agreed_at = account.terms_agreed_at
+                # Update new fields
+                model.role = account.role.value if isinstance(account.role, AccountRole) else account.role
+                model.plan = account.plan.value if isinstance(account.plan, AccountPlan) else account.plan
+                model.plan_started_at = account.plan_started_at
+                model.plan_ends_at = account.plan_ends_at
+                model.billing_customer_id = account.billing_customer_id
+                model.status = account.status.value if isinstance(account.status, AccountStatus) else account.status
                 self._session.commit()
                 self._session.refresh(model)
                 return self._to_entity(model)
@@ -94,6 +106,12 @@ class AccountRepositoryImpl(AccountRepositoryPort):
             terms_agreed_at=model.terms_agreed_at,
             created_at=model.created_at,
             updated_at=model.updated_at,
+            role=AccountRole.from_string(model.role) if model.role else AccountRole.USER,
+            plan=AccountPlan.from_string(model.plan) if model.plan else AccountPlan.FREE,
+            plan_started_at=model.plan_started_at,
+            plan_ends_at=model.plan_ends_at,
+            billing_customer_id=model.billing_customer_id,
+            status=AccountStatus.from_string(model.status) if model.status else AccountStatus.ACTIVE,
         )
 
     @staticmethod
@@ -105,4 +123,10 @@ class AccountRepositoryImpl(AccountRepositoryPort):
             nickname=entity.nickname,
             terms_agreed=entity.terms_agreed,
             terms_agreed_at=entity.terms_agreed_at,
+            role=entity.role.value if isinstance(entity.role, AccountRole) else entity.role,
+            plan=entity.plan.value if isinstance(entity.plan, AccountPlan) else entity.plan,
+            plan_started_at=entity.plan_started_at,
+            plan_ends_at=entity.plan_ends_at,
+            billing_customer_id=entity.billing_customer_id,
+            status=entity.status.value if isinstance(entity.status, AccountStatus) else entity.status,
         )
