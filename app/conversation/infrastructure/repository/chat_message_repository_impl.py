@@ -21,6 +21,7 @@ class ChatMessageRepositoryImpl(ChatMessageRepositoryPort):
         )
         self.db.add(msg)
         self.db.commit()
+        self.db.close()
         return msg
 
     async def save_assistant_message(self, content_enc: bytes, iv: bytes | None = None, **kwargs):
@@ -34,12 +35,16 @@ class ChatMessageRepositoryImpl(ChatMessageRepositoryPort):
         )
         self.db.add(msg)
         self.db.commit()
+        self.db.close()
         return msg
 
     async def find_by_room_id(self, room_id: str):
-        return (
-            self.db.query(ChatMessageOrm)
-            .filter(ChatMessageOrm.room_id == room_id)
-            .order_by(ChatMessageOrm.created_at.asc())
-            .all()
-        )
+        try:
+            return (
+                self.db.query(ChatMessageOrm)
+                .filter(ChatMessageOrm.room_id == room_id)
+                .order_by(ChatMessageOrm.created_at.asc())
+                .all()
+            )
+        finally:
+            self.db.close()
