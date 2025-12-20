@@ -3,7 +3,7 @@
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.sql import func
 
-from config.database.session import Base
+from app.config.database.session import Base
 
 
 class AccountModel(Base):

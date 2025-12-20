@@ -11,8 +11,8 @@ load_dotenv()
 
 from app.auth.adapter.input.web.router import router as auth_router
 from app.account.infrastructure.orm.account_model import AccountModel  # noqa: F401
-from config.database.session import Base, engine
-from config.settings import settings
+from app.config.database.session import Base, engine
+from app.config.settings import settings
 
 
 @asynccontextmanager

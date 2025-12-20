@@ -11,7 +11,7 @@ from sqlalchemy.dialects.mysql import JSON
 from sqlalchemy.sql import func
 from enum import Enum as PyEnum
 
-from config.database.session import Base
+from app.config.database.session import Base
 
 
 class AnalysisType(str, PyEnum):

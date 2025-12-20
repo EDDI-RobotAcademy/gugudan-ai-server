@@ -2,7 +2,7 @@
 
 from app.auth.application.port.oauth_provider_port import OAuthUserInfo
 from app.auth.infrastructure.oauth.base import BaseOAuthProvider
-from config.settings import settings
+from app.config.settings import settings
 
 
 class NaverOAuthProvider(BaseOAuthProvider):

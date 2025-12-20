@@ -21,7 +21,7 @@ from app.auth.application.port.jwt_token_port import (
 )
 from app.auth.application.port.token_blacklist_port import TokenBlacklistPort
 from app.common.infrastructure.encryption import TokenKeyGenerator
-from config.settings import settings
+from app.config.settings import settings
 
 
 class JWTTokenService(JWTTokenPort):

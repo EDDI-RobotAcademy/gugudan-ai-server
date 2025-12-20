@@ -7,8 +7,8 @@ import redis
 
 from app.auth.application.port.session_repository_port import SessionRepositoryPort
 from app.auth.domain.entity.session import Session
-from config.redis_config import get_redis
-from config.settings import settings
+from app.config.redis_config import get_redis
+from app.config.settings import settings
 
 
 class SessionRepositoryImpl(SessionRepositoryPort):

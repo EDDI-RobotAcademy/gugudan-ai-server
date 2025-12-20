@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.ml.infrastructure.orm.chat_message_analysis_model import ChatMessageAnalysisModel
-from config.database.session import get_db_session
+from app.config.database.session import get_db_session
 
 
 class MLRepositoryImpl(MLRepositoryPort):

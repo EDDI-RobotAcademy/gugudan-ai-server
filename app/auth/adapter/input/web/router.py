@@ -10,8 +10,6 @@ from app.auth.adapter.input.web.dependencies import (
     get_current_jwt_payload,
     get_optional_session,
     get_optional_jwt_payload,
-    verify_csrf,
-    verify_jwt_csrf,
 )
 from app.auth.adapter.input.web.response import (
     AuthStatusResponse,
@@ -24,7 +22,7 @@ from app.auth.application.port.jwt_token_port import TokenPayload
 from app.auth.application.usecase.auth_usecase import AuthUseCase
 from app.auth.domain.entity.session import Session
 from app.common.domain.exceptions import UnsupportedOAuthProviderException
-from config.settings import settings
+from app.config.settings import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

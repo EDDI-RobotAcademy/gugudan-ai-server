@@ -5,7 +5,7 @@ from typing import Optional
 import redis
 
 from app.auth.application.port.token_blacklist_port import TokenBlacklistPort
-from config.redis_config import get_redis
+from app.config.redis_config import get_redis
 
 
 class TokenBlacklistImpl(TokenBlacklistPort):

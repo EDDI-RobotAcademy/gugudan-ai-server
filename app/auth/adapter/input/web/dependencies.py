@@ -15,8 +15,7 @@ from app.auth.infrastructure.cache.session_repository_impl import SessionReposit
 from app.auth.infrastructure.cache.token_blacklist_impl import TokenBlacklistImpl
 from app.auth.infrastructure.jwt.jwt_token_service import JWTTokenService
 from app.account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
-from config.database.session import SessionLocal
-from config.settings import settings
+from app.config.database.session import SessionLocal
 
 
 def get_db() -> Generator[DBSession, None, None]:

@@ -8,7 +8,7 @@ from sqlalchemy import pool
 from alembic import context
 
 # Import database configuration
-from config.database.session import DATABASE_URL, Base
+from app.config.database.session import DATABASE_URL, Base
 
 # Import all models to ensure they are registered with Base.metadata
 from app.account.infrastructure.orm.account_model import AccountModel  # noqa: F401
