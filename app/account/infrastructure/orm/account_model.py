@@ -29,6 +29,8 @@ class AccountModel(Base):
     plan_started_at = Column(DateTime, nullable=True)
     plan_ends_at = Column(DateTime, nullable=True)
     billing_customer_id = Column(String(100), nullable=True)
+    mbti = Column(String(4), nullable=True)
+    gender = Column(String(10), nullable=True)
     status = Column(String(30), default="ACTIVE", nullable=False)
 
     def __repr__(self) -> str:

@@ -7,7 +7,7 @@ from typing import Optional
 from app.account.domain.entity.account_enums import (
     AccountPlan,
     AccountRole,
-    AccountStatus,
+    AccountStatus, Gender, Mbti,
 )
 
 
@@ -31,6 +31,8 @@ class Account:
     plan_started_at: Optional[datetime] = None
     plan_ends_at: Optional[datetime] = None
     billing_customer_id: Optional[str] = None
+    gender: Optional[Gender] = None
+    mbti: Optional[Mbti] = None
     status: AccountStatus = AccountStatus.ACTIVE
 
     def __post_init__(self):

@@ -94,3 +94,37 @@ class AccountStatus(str, Enum):
     def is_active(self) -> bool:
         """Check if the status allows normal account operations."""
         return self == AccountStatus.ACTIVE
+
+class Gender(Enum):
+    MALE = "MALE"
+    FEMALE = "FEMALE"
+    OTHER = "OTHER"
+
+    @classmethod
+    def from_string(cls, v: str) -> "Gender":
+        return cls[v.upper()] if v.upper() in cls.__members__ else cls(v.upper())
+
+class Mbti(Enum):
+    ISTJ = "ISTJ"
+    ISFJ = "ISFJ"
+    INFJ = "INFJ"
+    INTJ = "INTJ"
+    ISTP = "ISTP"
+    ISFP = "ISFP"
+    INFP = "INFP"
+    INTP = "INTP"
+    ESTP = "ESTP"
+    ESFP = "ESFP"
+    ENFP = "ENFP"
+    ENTP = "ENTP"
+    ESTJ = "ESTJ"
+    ESFJ = "ESFJ"
+    ENFJ = "ENFJ"
+    ENTJ = "ENTJ"
+
+    @classmethod
+    def from_string(cls, value: str) -> "Mbti":
+        try:
+            return cls[value.upper()]
+        except KeyError:
+            raise ValueError(f"Invalid MBTI value: {value}")
