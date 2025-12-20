@@ -1,17 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List
 
-from app.ml.infrastructure.orm.chat_message_analysis_model import ChatMessageAnalysisModel
+from app.conversation.infrastructure.orm.chat_message_orm import ChatMessageOrm
 
 
 class MLRepositoryPort(ABC):
 
     @abstractmethod
-    def get_counsel_data(self, chat_message_id: int, chat_message_feedback_id: int) -> Optional[dict]:
+    def get_counsel_data(self, start: str, end: str) -> List[ChatMessageOrm]:
         pass
-
-
-    @abstractmethod
-    def make_counsel_data_to_analysis(self, message_id: int, feedback_id: int) -> Optional[ChatMessageAnalysisModel]:
-        pass
-

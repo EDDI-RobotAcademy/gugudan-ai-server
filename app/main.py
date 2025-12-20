@@ -13,6 +13,7 @@ load_dotenv()
 
 from app.auth.adapter.input.web.router import router as auth_router
 from app.account.adapter.input.web.account_router import router as account_router
+from app.ml.adapter.input.web.ml_router import ml_router
 
 from app.account.infrastructure.orm.account_model import AccountModel  # noqa: F401
 from app.config.database.session import Base, engine
@@ -52,6 +53,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(conversation_router, prefix="/conversation")
 app.include_router(account_router, prefix="/api/v1")
+app.include_router(ml_router, prefix="/ml")
 
 @app.get("/health")
 async def health_check():

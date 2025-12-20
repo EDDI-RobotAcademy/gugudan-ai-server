@@ -11,20 +11,15 @@ from sqlalchemy import (
 from sqlalchemy.sql import func
 from enum import Enum as PyEnum
 
-
-class SatisfiedStatus(str, PyEnum):
-    SATISFIED = "SATISFIED "
-    UNSATISFIED = "UNSATISFIED"
-
-
 from app.config.database.session import Base
+from app.conversation.domain.chat_room.enums import SatisfiedStatus
 
 
 class MessageFeedbackModel(Base):
     __tablename__ = "chat_message_feedback"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    message_id = Column(BigInteger, ForeignKey("chat_message.id"))
+    message_id = Column(Integer, ForeignKey("chat_msg.id"))
     account_id = Column(Integer, ForeignKey("account.id"))
     satisfaction = Column(
         SAEnum(SatisfiedStatus, native_enum=True),

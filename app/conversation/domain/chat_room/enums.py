@@ -14,3 +14,7 @@ class ChatDivision(Enum):
     CONSULT = "CONSULT"
     ANALYSIS = "ANALYSIS"
     FREE = "FREE"
+
+class SatisfiedStatus(Enum):
+    SATISFIED = "SATISFIED"
+    UNSATISFIED = "UNSATISFIED"

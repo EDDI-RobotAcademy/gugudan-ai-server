@@ -1,11 +1,15 @@
 from app.ml.application.port.ml_repository_port import MLRepositoryPort
-from sqlalchemy.orm import Session
-from typing import Optional
+from sqlalchemy.orm import Session, aliased
+from sqlalchemy import literal
 
-from app.ml.infrastructure.orm.chat_message_analysis_model import ChatMessageAnalysisModel
+from typing import List
+from datetime import datetime, timedelta
+
 from app.config.database.session import get_db_session
-from app.message_log.infrastructure.orm.message_log_models import ChatRoomModel
-from app.message_log.infrastructure.orm.message_log_models import ChatMessageModel
+from app.conversation.infrastructure.orm.chat_message_feedback_orm import  MessageFeedbackModel
+from app.conversation.infrastructure.orm.chat_message_orm import ChatMessageOrm
+from app.ml.domain.output_message import CounselRow
+
 
 class MLRepositoryImpl(MLRepositoryPort):
     __instance = None
@@ -26,19 +30,69 @@ class MLRepositoryImpl(MLRepositoryPort):
         if not hasattr(self, 'db'):
             self.db: Session = get_db_session()
 
-    def get_counsel_data(self, chat_message_id: int, chat_message_feedback_id: int) -> dict:
+    def get_counsel_data(self, start: str, end: str) -> List[CounselRow]:
         try:
-            data = self.db.query(ChatMessageModel).filter(ChatMessageModel.id == chat_message_id,
-                                                           ChatMessageModel.id == chat_message_id).first()
+            m1 = aliased(ChatMessageOrm)  # USER
+            m2 = aliased(ChatMessageOrm)  # ASSISTANT
+
+            start_dt = datetime.strptime(start, "%Y%m%d")
+            end_dt = datetime.strptime(end, "%Y%m%d") + timedelta(days=1)
+
+            user_q = (
+                self.db.query(
+                    literal("USER").label("role"),
+                    m1.content_enc.label("message"),
+                    literal(None).label("parent"),
+                    m1.created_at.label("created_at")
+                )
+                .join(m2, m1.room_id == m2.room_id)
+                .join(MessageFeedbackModel, m2.id == MessageFeedbackModel.message_id)
+                .filter(
+                    m1.role == "USER",
+                    m2.role == "ASSISTANT",
+                    m2.parent_message_id == m1.id,
+                    MessageFeedbackModel.satisfaction == "SATISFIED",
+                    m1.created_at >= start_dt,
+                    m1.created_at < end_dt,
+                )
+            )
+
+            assistant_q = (
+                self.db.query(
+                    literal("ASSISTANT").label("role"),
+                    m2.content_enc.label("message"),
+                    m2.parent_message_id.label("parent"),
+                    m2.created_at.label("created_at")
+                )
+                .join(m1, m1.room_id == m2.room_id)
+                .join(MessageFeedbackModel, m2.id == MessageFeedbackModel.message_id)
+                .filter(
+                    m1.role == "USER",
+                    m2.role == "ASSISTANT",
+                    m2.parent_message_id == m1.id,
+                    MessageFeedbackModel.satisfaction == "SATISFIED",
+                    m2.created_at >= start_dt,
+                    m2.created_at < end_dt,
+                )
+            )
+
+            rows = user_q.union_all(assistant_q).all()
+
+            result: List[CounselRow] = [
+                {
+                    "role": row.role,
+                    "message": row.message,
+                    "parent": row.parent,
+                    "created_at": row.created_at
+                }
+                for row in rows
+            ]
+
+            print(f"result : {result}")
+
+            return result
+
         finally:
-            return None
+            self.db.close()
 
-    def make_counsel_data_to_analysis(self, message_id: int, feedback_id: int) -> Optional[ChatMessageAnalysisModel]:
-        """
-        상담 내역을 chat_message_analysis 테이블에 맞춰 저장한다.
-
-        :param message_id: 채팅 내역 id
-        :param feedback_id: 피드백 id
-        :return:
-        """
 
