@@ -90,5 +90,5 @@ class MLUseCase:
 
         return {"messages": jsonl_data}
 
-    def get_counsel_data(self, chat_message_id: int, chat_message_feedback_id: int) -> dict:
+    def get_counsel_data(self, chat_message_id: int, chat_feedback_id: int) -> dict:
         pass

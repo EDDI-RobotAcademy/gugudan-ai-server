@@ -1,0 +1,2 @@
+class ChatFeedbackDomainException(Exception):
+    pass
