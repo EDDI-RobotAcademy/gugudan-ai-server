@@ -1,82 +1,78 @@
 from fastapi import APIRouter, Depends, Body, HTTPException
 import uuid
-from app.auth.adapter.input.web.dependencies import get_optional_jwt_payload, get_optional_session
-from app.auth.application.port.jwt_token_port import TokenPayload
-from app.auth.domain.entity.session import Session
 
-from app.conversation.infrastructure.repository.chat_room_repository_impl import ChatRoomRepositoryImpl
-from app.conversation.infrastructure.repository.chat_message_repository_impl import ChatMessageRepositoryImpl
+from app.account.adapter.input.web.account_router import get_current_account_id
+from app.config.database.session import get_db_session
+from sqlalchemy.orm import Session
+
+# 전역 객체는 상태가 없는 것들만 유지
 from app.config.call_gpt import CallGPT
-from app.conversation.infrastructure.repository.usage_meter_impl import UsageMeterImpl
-from app.conversation.application.usecase.stream_chat_usecase import StreamChatUsecase
+from app.conversation.application.usecase.delete_chat_usecase import DeleteChatUseCase
 from app.conversation.application.usecase.get_chat_message_usecase import GetChatMessagesUseCase
 from app.conversation.application.usecase.get_chat_room_usecase import GetChatRoomsUseCase
-from app.conversation.adapter.output.stream.stream_adapter import StreamAdapter
+from app.conversation.infrastructure.repository.chat_room_repository_impl import ChatRoomRepositoryImpl
+from app.conversation.infrastructure.repository.usage_meter_impl import UsageMeterImpl
 from app.config.security.message_crypto import AESEncryption
+from app.conversation.adapter.output.stream.stream_adapter import StreamAdapter
 
 crypto_service = AESEncryption()
-
-# =============================
-# 2. DI 객체 구성
-# =============================
-chat_room_repo = ChatRoomRepositoryImpl()
-chat_message_repo = ChatMessageRepositoryImpl()
 llm_chat_port = CallGPT()
 usage_meter = UsageMeterImpl()
-
-stream_chat_usecase = StreamChatUsecase(
-    chat_room_repo=chat_room_repo,
-    chat_message_repo=chat_message_repo,
-    llm_chat_port=llm_chat_port,
-    usage_meter=usage_meter,
-    crypto_service=crypto_service
-)
 
 conversation_router = APIRouter(tags=["conversation"])
 
 
-# =============================
-# 인증 로직 (기존 유지)
-# =============================
-def get_current_account_id(
-        jwt_payload: TokenPayload | None = Depends(get_optional_jwt_payload),
-        session: Session | None = Depends(get_optional_session),
-) -> int:
-    if jwt_payload:
-        return jwt_payload.account_id
-    if session:
-        return session.account_id
-    raise HTTPException(status_code=401, detail="Not authenticated")
-
-
-# =============================
-# GET 내 채팅방 목록
-# =============================
 @conversation_router.get("/rooms")
-async def get_my_rooms(account_id: int = Depends(get_current_account_id)):
-    uc = GetChatRoomsUseCase(chat_room_repo)
-    return await uc.execute(account_id)
+async def get_my_rooms(
+        account_id: int = Depends(get_current_account_id),
+        db: Session = Depends(get_db_session)  # 1. 세션 주입 필요
+):
+    # 2. 레포지토리에 현재 세션을 넣어서 생성
+    room_repo = ChatRoomRepositoryImpl(db)
+    uc = GetChatRoomsUseCase(room_repo)
+
+    rooms = await uc.execute(account_id)
+    return rooms
 
 
-# =============================
-# GET 특정 채팅방 메시지 (복호화 포함)
-# =============================
 @conversation_router.get("/rooms/{room_id}/messages")
-async def get_room_messages(room_id: str, account_id: int = Depends(get_current_account_id)):
+async def get_room_messages(
+        room_id: str,
+        db: Session = Depends(get_db_session)
+):
+    # 2. 함수 안에서 필요한 리포지토리 생성
+    from app.conversation.infrastructure.repository.chat_message_repository_impl import ChatMessageRepositoryImpl
+
+    chat_message_repo = ChatMessageRepositoryImpl(db)
+
+    # 3. UseCase 실행
     uc = GetChatMessagesUseCase(chat_message_repo, crypto_service)
     return await uc.execute(room_id)
 
-
-# =============================
-# POST AI 스트리밍 채팅 (GPT-4.1 스트리밍)
-# =============================
 @conversation_router.post("/chat/stream-auto")
 async def stream_chat_auto(
         account_id: int = Depends(get_current_account_id),
         message: str = Body(..., embed=True),
         room_id: str | None = Body(default=None, embed=True),
+        db: Session = Depends(get_db_session)
 ):
-    # 신규 방 생성 로직
+    # 레포지토리와 유즈케이스를 함수 내부에서 생성 (세션 주입)
+    from app.conversation.infrastructure.repository.chat_room_repository_impl import ChatRoomRepositoryImpl
+    from app.conversation.infrastructure.repository.chat_message_repository_impl import ChatMessageRepositoryImpl
+    from app.conversation.application.usecase.stream_chat_usecase import StreamChatUsecase
+
+    chat_room_repo = ChatRoomRepositoryImpl(db)
+    chat_message_repo = ChatMessageRepositoryImpl(db)
+
+    usecase = StreamChatUsecase(
+        chat_room_repo=chat_room_repo,
+        chat_message_repo=chat_message_repo,
+        llm_chat_port=llm_chat_port,
+        usage_meter=usage_meter,
+        crypto_service=crypto_service
+    )
+
+    # 방 생성 로직
     if room_id is None:
         room_id = str(uuid.uuid4())
         await chat_room_repo.create(
@@ -85,20 +81,37 @@ async def stream_chat_auto(
             title=message[:20],
             category="GENERAL",
             division="DEFAULT",
-            out_api=False
+            out_api="FALSE"
         )
     else:
         room = await chat_room_repo.find_by_id(room_id)
         if not room:
             raise HTTPException(status_code=404, detail="Room not found")
 
-    # 스트리밍 실행 (제너레이터 반환)
-    generator = stream_chat_usecase.execute(
+    generator = usecase.execute(
         room_id=room_id,
         account_id=account_id,
         message=message,
         contents_type="TEXT",
     )
 
-    # SSE(Server-Sent Events) 등으로 클라이언트에 한 글자씩 전달
     return StreamAdapter.to_streaming_response(generator)
+
+
+@conversation_router.delete("/rooms/{room_id}")
+async def delete_chat_room(
+        room_id: str,
+        account_id: int = Depends(get_current_account_id),
+        db: Session = Depends(get_db_session)
+):
+    chat_room_repo = ChatRoomRepositoryImpl(db)
+
+    usecase = DeleteChatUseCase(chat_room_repo)
+
+    # 3. 실행
+    success = await usecase.execute(room_id=room_id, account_id=account_id)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="채팅방을 찾을 수 없거나 삭제 권한이 없습니다.")
+
+    return {"message": "채팅방과 모든 메시지가 성공적으로 삭제되었습니다."}
