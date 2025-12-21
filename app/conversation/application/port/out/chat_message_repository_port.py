@@ -2,28 +2,9 @@ from abc import ABC, abstractmethod
 
 
 class ChatMessageRepositoryPort(ABC):
-
     @abstractmethod
-    async def save_user_message(
-        self,
-        room_id: str,
-        account_id: int,
-        content_enc: bytes,
-        iv: bytes,
-        enc_version: int,
-        contents_type: str,
-    ) -> None:
-        pass
-
-    @abstractmethod
-    async def save_assistant_message(
-        self,
-        room_id: str,
-        content_enc: bytes,
-        iv: bytes,
-        enc_version: int,
-        contents_type: str,
-    ) -> None:
+    async def save_message(self, **kwargs):
+        """유저/AI 구분 없이 메시지를 저장하고 생성된 객체를 반환"""
         pass
 
     @abstractmethod

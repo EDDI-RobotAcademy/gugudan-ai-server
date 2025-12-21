@@ -27,3 +27,7 @@ class ChatRoomRepositoryPort(ABC):
     @abstractmethod
     async def find_by_account_id(self, account_id: int):
         pass
+
+    @abstractmethod
+    async def delete_by_room_id(self, room_id: int):
+        pass

@@ -1,50 +1,43 @@
-from app.conversation.application.port.out.chat_message_repository_port import ChatMessageRepositoryPort
-from app.conversation.infrastructure.orm.chat_message_orm import ChatMessageOrm
-from app.config.database.session import get_db_session
 from sqlalchemy.orm import Session
 from Crypto.Random import get_random_bytes
+from app.conversation.infrastructure.orm.chat_message_orm import ChatMessageOrm
 
-class ChatMessageRepositoryImpl(ChatMessageRepositoryPort):
 
-    def __init__(self, session: Session | None = None):
-        self.db: Session = session or get_db_session()
+class ChatMessageRepositoryImpl:
+    def __init__(self, session: Session):
+        self.db = session
 
-    async def save_user_message(self, content_enc: bytes, iv: bytes | None = None, **kwargs):
-        # IV가 없으면 16바이트 랜덤 생성
-        if not iv:
-            iv = get_random_bytes(16)
-        msg = ChatMessageOrm(
-            role="USER",
-            content_enc=content_enc,
-            iv=iv,
-            **kwargs
-        )
+    async def save_message(self, **kwargs):
+        # 1. IV 자동 생성
+        if not kwargs.get('iv'):
+            kwargs['iv'] = get_random_bytes(16)
+
+        # 2. parent_id 유효성 검사 (핵심 해결책)
+        parent_id = kwargs.get('parent_id')
+        if parent_id is not None:
+            # 실제로 해당 ID를 가진 메시지가 있는지 DB에서 확인
+            exists = self.db.query(ChatMessageOrm).filter(ChatMessageOrm.id == parent_id).first()
+            if not exists:
+                # 존재하지 않는다면 외래키 에러를 피하기 위해 None으로 교체
+                print(f"⚠️ Warning: parent_id {parent_id} not found in DB. Setting to None.")
+                kwargs['parent_id'] = None
+
+        # 3. 객체 생성 및 저장
+        msg = ChatMessageOrm(**kwargs)
         self.db.add(msg)
-        self.db.commit()
-        self.db.close()
-        return msg
 
-    async def save_assistant_message(self, content_enc: bytes, iv: bytes | None = None, **kwargs):
-        if not iv:
-            iv = get_random_bytes(16)
-        msg = ChatMessageOrm(
-            role="ASSISTANT",
-            content_enc=content_enc,
-            iv=iv,
-            **kwargs
-        )
-        self.db.add(msg)
-        self.db.commit()
-        self.db.close()
+        try:
+            self.db.flush()  # ID 생성을 위해 flush 실행
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
         return msg
 
     async def find_by_room_id(self, room_id: str):
-        try:
-            return (
-                self.db.query(ChatMessageOrm)
-                .filter(ChatMessageOrm.room_id == room_id)
-                .order_by(ChatMessageOrm.created_at.asc())
-                .all()
-            )
-        finally:
-            self.db.close()
+        return (
+            self.db.query(ChatMessageOrm)
+            .filter(ChatMessageOrm.room_id == room_id)
+            .order_by(ChatMessageOrm.id.asc())
+            .all()
+        )

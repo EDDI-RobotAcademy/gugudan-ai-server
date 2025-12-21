@@ -18,6 +18,7 @@ class ChatMessage:
         content: EncryptedContent,
         content_type: ContentType,
         created_at: datetime,
+        parent_id: int | None = None,
         updated_at: datetime | None = None,
         img_url: str | None = None,
     ):
@@ -31,4 +32,5 @@ class ChatMessage:
         self.img_url = img_url
 
         self.created_at = created_at
+        self.parent_id = parent_id
         self.updated_at = updated_at

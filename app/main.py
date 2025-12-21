@@ -16,6 +16,8 @@ from app.account.adapter.input.web.account_router import router as account_route
 from app.ml.adapter.input.web.ml_router import ml_router
 
 from app.account.infrastructure.orm.account_model import AccountModel  # noqa: F401
+from app.conversation.infrastructure.orm.chat_room_orm import ChatRoomOrm
+from app.conversation.infrastructure.orm.chat_message_orm import ChatMessageOrm
 from app.config.database.session import Base, engine
 from app.config.settings import settings
 
