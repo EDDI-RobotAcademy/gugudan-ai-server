@@ -33,6 +33,7 @@ def get_current_account_id(
     jwt_payload: TokenPayload | None = Depends(get_optional_jwt_payload),
     session: Session | None = Depends(get_optional_session),
 ) -> int:
+
     if jwt_payload:
         return jwt_payload.account_id
     if session:

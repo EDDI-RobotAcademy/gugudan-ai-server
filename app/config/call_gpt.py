@@ -44,9 +44,10 @@ async def _create_chat_completion_stream(prompt: str) -> AsyncIterator[str]:
         ValueError: 프롬프트가 비어있는 경우
         Exception: OpenAI API 호출 실패 시
     """
+
     if not prompt or not prompt.strip():
         raise ValueError("Prompt cannot be empty")
-    
+
     client = get_async_client()
     
     # 타입 안전성을 위해 딕셔너리를 명시적으로 구성
@@ -54,7 +55,7 @@ async def _create_chat_completion_stream(prompt: str) -> AsyncIterator[str]:
     messages: list[ChatCompletionMessageParam] = [
         message  # type: ignore[list-item]
     ]
-    
+
     try:
         response = await client.chat.completions.create(
             model="gpt-4.1",

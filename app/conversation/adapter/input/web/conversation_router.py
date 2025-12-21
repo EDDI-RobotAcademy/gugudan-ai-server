@@ -75,7 +75,6 @@ async def stream_chat_auto(
         usage_meter=usage_meter,
         crypto_service=crypto_service
     )
-
     # 방 생성 로직
     if room_id is None:
         room_id = str(uuid.uuid4())
@@ -98,7 +97,6 @@ async def stream_chat_auto(
         message=message,
         contents_type="TEXT",
     )
-
     return StreamAdapter.to_streaming_response(generator)
 
 
@@ -134,6 +132,7 @@ async def add_feedback(
         raise HTTPException(status_code=404, detail="존재하지 않는 채팅입니다.")
 
     return {"message": "피드백이 성공적으로 반영되었습니다."}
+
 
 @conversation_router.put("/feedback")
 async def update_feedback(

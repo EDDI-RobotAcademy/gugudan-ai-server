@@ -31,13 +31,17 @@ class ChatMessageRepositoryImpl:
         except Exception as e:
             self.db.rollback()
             raise e
-
+        finally:
+            self.db.close()
         return msg
 
     async def find_by_room_id(self, room_id: str):
-        return (
-            self.db.query(ChatMessageOrm)
-            .filter(ChatMessageOrm.room_id == room_id)
-            .order_by(ChatMessageOrm.id.asc())
-            .all()
-        )
+        try:
+            return (
+                self.db.query(ChatMessageOrm)
+                .filter(ChatMessageOrm.room_id == room_id)
+                .order_by(ChatMessageOrm.id.asc())
+                .all()
+            )
+        finally:
+            self.db.close()

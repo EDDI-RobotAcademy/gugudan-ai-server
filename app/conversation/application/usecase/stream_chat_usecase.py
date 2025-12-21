@@ -76,6 +76,7 @@ class StreamChatUsecase:
 
         # 5. AI 메시지 저장 (부모: 유저 메시지 ID)
         assistant_encrypted, assistant_iv = self.crypto_service.encrypt(assistant_full_message)
+
         await self.chat_message_repo.save_message(
             room_id=room_id,
             account_id=account_id,

@@ -32,12 +32,15 @@ class ChatRoomRepositoryImpl(ChatRoomRepositoryPort):
         self.db.close()
 
     async def find_by_account_id(self, account_id: int):
-        return (
-            self.db.query(ChatRoomOrm)
-            .filter(ChatRoomOrm.account_id == account_id)
-            .order_by(ChatRoomOrm.created_at.desc())
-            .all()
-        )
+        try:
+            return (
+                self.db.query(ChatRoomOrm)
+                .filter(ChatRoomOrm.account_id == account_id)
+                .order_by(ChatRoomOrm.created_at.desc())
+                .all()
+            )
+        finally:
+            self.db.close()
 
     async def delete_by_room_id(self, room_id: str) -> bool:
         try:
@@ -55,3 +58,5 @@ class ChatRoomRepositoryImpl(ChatRoomRepositoryPort):
         except Exception as e:
             self.db.rollback()
             raise e
+        finally:
+            self.db.close()
