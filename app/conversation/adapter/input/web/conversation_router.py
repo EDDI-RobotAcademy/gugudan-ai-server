@@ -7,9 +7,12 @@ from sqlalchemy.orm import Session
 
 # 전역 객체는 상태가 없는 것들만 유지
 from app.config.call_gpt import CallGPT
+from app.conversation.adapter.input.web.request.chat_feedback_request import ChatFeedback
 from app.conversation.application.usecase.delete_chat_usecase import DeleteChatUseCase
 from app.conversation.application.usecase.get_chat_message_usecase import GetChatMessagesUseCase
 from app.conversation.application.usecase.get_chat_room_usecase import GetChatRoomsUseCase
+from app.conversation.application.usecase.insert_chat_feedback_usecase import ChatFeedbackUsecase
+from app.conversation.infrastructure.repository.chat_feedback_repository_impl import ChatFeedbackRepositoryImpl
 from app.conversation.infrastructure.repository.chat_room_repository_impl import ChatRoomRepositoryImpl
 from app.conversation.infrastructure.repository.usage_meter_impl import UsageMeterImpl
 from app.config.security.message_crypto import AESEncryption
@@ -48,6 +51,7 @@ async def get_room_messages(
     # 3. UseCase 실행
     uc = GetChatMessagesUseCase(chat_message_repo, crypto_service)
     return await uc.execute(room_id)
+
 
 @conversation_router.post("/chat/stream-auto")
 async def stream_chat_auto(
@@ -115,3 +119,32 @@ async def delete_chat_room(
         raise HTTPException(status_code=404, detail="채팅방을 찾을 수 없거나 삭제 권한이 없습니다.")
 
     return {"message": "채팅방과 모든 메시지가 성공적으로 삭제되었습니다."}
+
+
+@conversation_router.post("/feedback")
+async def add_feedback(
+        feedback: ChatFeedback,
+        db: Session = Depends(get_db_session)
+):
+    chat_feedback_repo = ChatFeedbackRepositoryImpl(db)
+    use_case = ChatFeedbackUsecase(chat_feedback_repo)
+    success = await use_case.create_chat_feedback(feedback)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="존재하지 않는 채팅입니다.")
+
+    return {"message": "피드백이 성공적으로 반영되었습니다."}
+
+@conversation_router.put("/feedback")
+async def update_feedback(
+        feedback: ChatFeedback,
+        db: Session = Depends(get_db_session)
+):
+    chat_feedback_repo = ChatFeedbackRepositoryImpl(db)
+    use_case = ChatFeedbackUsecase(chat_feedback_repo)
+    success = await use_case.update_chat_feedback(feedback)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="존재하지 않는 채팅입니다.")
+
+    return {"message": "피드백이 성공적으로 반영되었습니다."}

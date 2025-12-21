@@ -11,11 +11,11 @@ from sqlalchemy import (
 from sqlalchemy.sql import func
 
 from app.config.database.session import Base
-from app.conversation.domain.chat_room.enums import SatisfiedStatus
+from app.conversation.domain.chat_feedback.enums import SatisfiedStatus
 
 
 class MessageFeedbackModel(Base):
-    __tablename__ = "chat_message_feedback"
+    __tablename__ = "chat_feedback"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     message_id = Column(Integer, ForeignKey("chat_msg.id"))
