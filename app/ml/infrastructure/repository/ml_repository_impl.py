@@ -41,6 +41,7 @@ class MLRepositoryImpl(MLRepositoryPort):
             user_q = (
                 self.db.query(
                     m1.id.label("id"),
+                    m1.account_id.label("account_id"),
                     literal("USER").label("role"),
                     m1.content_enc.label("message"),
                     literal(None).label("parent"),
@@ -62,6 +63,7 @@ class MLRepositoryImpl(MLRepositoryPort):
             assistant_q = (
                 self.db.query(
                     m2.id.label("id"),
+                    m2.account_id.label("account_id"),
                     literal("ASSISTANT").label("role"),
                     m2.content_enc.label("message"),
                     m2.parent_id.label("parent"),
@@ -85,6 +87,7 @@ class MLRepositoryImpl(MLRepositoryPort):
             result: List[CounselRow] = [
                 {
                     "id": row.id,
+                    "account_id": row.account_id,
                     "role": row.role,
                     "message": row.message,
                     "parent": row.parent,

@@ -39,4 +39,11 @@ class Anonymizer:
             text,
         )
 
+        # 인칭 대명사
+        text = re.sub(
+            r"\b[가-힣]{2,4}([님씨아야])\b",
+            lambda m: self.decrypt(m.group(), "name"),
+            text,
+        )
+
         return text

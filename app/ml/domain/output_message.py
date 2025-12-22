@@ -3,6 +3,7 @@ from typing import TypedDict, Optional
 
 class CounselRow(TypedDict):
     id: int
+    account_id: int
     role: str
     message: str
     parent: Optional[int]

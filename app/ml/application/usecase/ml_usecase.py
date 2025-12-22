@@ -10,7 +10,6 @@ from app.ml.application.port.ml_repository_port import MLRepositoryPort
 load_dotenv()
 AES_KEY = base64.b64decode(os.getenv("AES_KEY"))
 
-
 class MLUseCase:
 
     def __init__(self, ml_repository: MLRepositoryPort):
@@ -22,6 +21,7 @@ class MLUseCase:
         ## 사용자 상담 데이터 가져오기 (Feedback SATISFIED Data)
         chat_datas = self.ml_repository.get_counsel_data(start, end)
 
+        ## 유저 정보 가져오기
         anonymizer = Anonymizer()
 
         # USER 메시지 맵
