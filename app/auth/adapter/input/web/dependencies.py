@@ -183,6 +183,21 @@ def get_optional_jwt_payload(
     return jwt_service.validate_token(token)
 
 
+def verify_admin_role(
+    jwt_payload: TokenPayload = Depends(get_current_jwt_payload),
+    account_repo: AccountRepositoryImpl = Depends(get_account_repository),
+) -> int:
+    account = account_repo.find_by_id(jwt_payload.account_id)
+
+    if not account or not account.is_admin():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="관리자 권한이 필요합니다",
+        )
+
+    return jwt_payload.account_id
+
+
 def verify_csrf(
     request: Request,
     csrf_usecase: CSRFUseCase = Depends(get_csrf_usecase),

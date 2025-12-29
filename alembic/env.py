@@ -17,7 +17,9 @@ from app.account.infrastructure.orm.account_model import AccountModel  # noqa: F
 config = context.config
 
 # Set the SQLAlchemy URL from our settings
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+# Note: Escape % characters for ConfigParser by doubling them
+escaped_url = DATABASE_URL.replace("%", "%%")
+config.set_main_option("sqlalchemy.url", escaped_url)
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:

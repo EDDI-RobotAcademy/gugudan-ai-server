@@ -14,10 +14,15 @@ load_dotenv()
 from app.auth.adapter.input.web.router import router as auth_router
 from app.account.adapter.input.web.account_router import router as account_router
 from app.ml.adapter.input.web.ml_router import ml_router
+from app.inquiry.adapter.input.web.inquiry_router import router as inquiry_router
+from app.faq.adapter.input.web.faq_router import router as faq_router
 
 from app.account.infrastructure.orm.account_model import AccountModel  # noqa: F401
 from app.conversation.infrastructure.orm.chat_room_orm import ChatRoomOrm
 from app.conversation.infrastructure.orm.chat_message_orm import ChatMessageOrm
+from app.inquiry.infrastructure.orm.inquiry_model import InquiryModel  # noqa: F401
+from app.inquiry.infrastructure.orm.inquiry_reply_model import InquiryReplyModel  # noqa: F401
+from app.faq.infrastructure.orm.faq_model import FAQModel  # noqa: F401
 from app.config.database.session import Base, engine
 from app.config.settings import settings
 
@@ -56,6 +61,8 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(conversation_router, prefix="/conversation")
 app.include_router(account_router, prefix="/api/v1")
 app.include_router(ml_router, prefix="/ml")
+app.include_router(inquiry_router, prefix="/api/v1")
+app.include_router(faq_router, prefix="/api/v1")
 
 @app.get("/health")
 async def health_check():
