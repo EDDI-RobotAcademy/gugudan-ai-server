@@ -40,3 +40,6 @@ email_validator
 boto3>=1.34.0
 Pillow>=10.2.0
 python-multipart>=0.0.21
+
+# yaml
+pyyaml==6.0.1

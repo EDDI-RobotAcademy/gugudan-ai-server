@@ -31,89 +31,80 @@ class AccountRepositoryImpl(AccountRepositoryPort):
 
     def find_by_id(self, account_id: int) -> Optional[Account]:
         """Find an account by its ID."""
-        try:
-            model = (
-                self._session.query(AccountModel)
-                .filter(AccountModel.id == account_id)
-                .first()
-            )
-            return self._to_entity(model) if model else None
-        finally:
-            self._session.close()
+        model = (
+            self._session.query(AccountModel)
+            .filter(AccountModel.id == account_id)
+            .first()
+        )
+        return self._to_entity(model) if model else None
+
 
     def find_by_email(self, email: str) -> Optional[Account]:
         """Find an account by email address."""
-        try:
-            model = (
-                self._session.query(AccountModel)
-                .filter(AccountModel.email == email)
-                .first()
-            )
-            return self._to_entity(model) if model else None
-        finally:
-            self._session.close()
+        model = (
+            self._session.query(AccountModel)
+            .filter(AccountModel.email == email)
+            .first()
+        )
+        return self._to_entity(model) if model else None
+
 
     def save(self, account: Account) -> Account:
         """Save an account (create or update)."""
-        try:
-            if account.is_new():
-                # Create new account
-                model = self._to_model(account)
-                self._session.add(model)
+        if account.is_new():
+            # Create new account
+            model = self._to_model(account)
+            self._session.add(model)
+            self._session.commit()
+            self._session.refresh(model)
+            return self._to_entity(model)
+        else:
+            # Update existing account
+            model = (
+                self._session.query(AccountModel)
+                .filter(AccountModel.id == account.id)
+                .first()
+            )
+            if model:
+                model.email = account.email
+                model.nickname = account.nickname
+                model.terms_agreed = account.terms_agreed
+                model.terms_agreed_at = account.terms_agreed_at
+                # Update new fields
+                model.role = account.role.value if isinstance(account.role, AccountRole) else account.role
+                model.plan = account.plan.value if isinstance(account.plan, AccountPlan) else account.plan
+                model.plan_started_at = account.plan_started_at
+                model.plan_ends_at = account.plan_ends_at
+                model.billing_customer_id = account.billing_customer_id
+                model.status = account.status.value if isinstance(account.status, AccountStatus) else account.status
+
+                # 추가 : mbti /gender
+                model.mbti = account.mbti.value if account.mbti else None
+                model.gender = account.gender.value if account.gender else None
+
                 self._session.commit()
                 self._session.refresh(model)
                 return self._to_entity(model)
             else:
-                # Update existing account
-                model = (
-                    self._session.query(AccountModel)
-                    .filter(AccountModel.id == account.id)
-                    .first()
-                )
-                if model:
-                    model.email = account.email
-                    model.nickname = account.nickname
-                    model.terms_agreed = account.terms_agreed
-                    model.terms_agreed_at = account.terms_agreed_at
-                    # Update new fields
-                    model.role = account.role.value if isinstance(account.role, AccountRole) else account.role
-                    model.plan = account.plan.value if isinstance(account.plan, AccountPlan) else account.plan
-                    model.plan_started_at = account.plan_started_at
-                    model.plan_ends_at = account.plan_ends_at
-                    model.billing_customer_id = account.billing_customer_id
-                    model.status = account.status.value if isinstance(account.status, AccountStatus) else account.status
-
-                    # 추가 : mbti /gender
-                    model.mbti = account.mbti.value if account.mbti else None
-                    model.gender = account.gender.value if account.gender else None
-
-                    self._session.commit()
-                    self._session.refresh(model)
-                    return self._to_entity(model)
-                else:
-                    # Account not found, create new
-                    return self.save(Account(
-                        email=account.email,
-                        nickname=account.nickname,
-                        terms_agreed=account.terms_agreed,
-                        terms_agreed_at=account.terms_agreed_at,
-                        mbti=account.mbti,
-                        gender=account.gender,
-                    ))
-        finally:
-            self._session.close()
+                # Account not found, create new
+                return self.save(Account(
+                    email=account.email,
+                    nickname=account.nickname,
+                    terms_agreed=account.terms_agreed,
+                    terms_agreed_at=account.terms_agreed_at,
+                    mbti=account.mbti,
+                    gender=account.gender,
+                ))
 
     def exists_by_email(self, email: str) -> bool:
         """Check if an account exists with the given email."""
-        try:
-            return (
-                self._session.query(AccountModel)
-                .filter(AccountModel.email == email)
-                .first()
-                is not None
-            )
-        finally:
-            self._session.close()
+        return (
+            self._session.query(AccountModel)
+            .filter(AccountModel.email == email)
+            .first()
+            is not None
+        )
+
 
     @staticmethod
     def _to_entity(model: AccountModel) -> Account:

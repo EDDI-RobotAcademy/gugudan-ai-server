@@ -72,9 +72,10 @@ async def stream_chat_auto(
     from app.conversation.infrastructure.repository.chat_room_repository_impl import ChatRoomRepositoryImpl
     from app.conversation.infrastructure.repository.chat_message_repository_impl import ChatMessageRepositoryImpl
     from app.conversation.application.usecase.stream_chat_usecase import StreamChatUsecase
-
+    from app.account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl  # 추가
     chat_room_repo = ChatRoomRepositoryImpl(db)
     chat_message_repo = ChatMessageRepositoryImpl(db)
+    account_repo = AccountRepositoryImpl(db)  # 추가
     s3_service = S3Service()
 
     # 1. room_id 판단 로직 보정
@@ -104,6 +105,7 @@ async def stream_chat_auto(
     usecase = StreamChatUsecase(
         chat_room_repo=chat_room_repo,
         chat_message_repo=chat_message_repo,
+        account_repo=account_repo,  # mbti, gender 활용 위한 추가
         llm_chat_port=llm_chat_port,
         usage_meter=usage_meter,
         crypto_service=crypto_service,

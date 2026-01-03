@@ -79,7 +79,7 @@ class Settings(BaseSettings):
     AWS_S3_BUCKET: str
     CLOUDFRONT_DOMAIN: str
     CLOUDFRONT_KEY_ID: str
-    CLOUDFRONT_PRIVATE_KEY: str
+    CLOUDFRONT_PRIVATE_KEY_PATH: str
 
     @property
     def is_production(self) -> bool:

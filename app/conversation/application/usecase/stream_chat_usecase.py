@@ -7,6 +7,7 @@ class StreamChatUsecase:
             self,
             chat_room_repo,
             chat_message_repo,
+            account_repo,  # 추가
             llm_chat_port,
             usage_meter,
             crypto_service,
@@ -14,6 +15,7 @@ class StreamChatUsecase:
     ):
         self.chat_room_repo = chat_room_repo
         self.chat_message_repo = chat_message_repo
+        self.account_repo = account_repo  # 추가
         self.llm_chat_port = llm_chat_port
         self.usage_meter = usage_meter
         self.crypto_service = crypto_service
@@ -39,20 +41,6 @@ class StreamChatUsecase:
 
         if not conversation.is_active():
             raise HTTPException(status_code=400, detail="채팅방이 활성 상태가 아닙니다.")
-
-        # 2. 유저 메시지 저장 (부모: 기존 마지막 메시지)
-        user_encrypted, user_iv = self.crypto_service.encrypt(message)
-        saved_user = await self.chat_message_repo.save_message(
-            room_id=room_id,
-            account_id=account_id,
-            role="USER",
-            content_enc=user_encrypted,
-            iv=user_iv,
-            parent_id=conversation.get_last_id(),
-            enc_version=self.crypto_service.get_version(),
-            contents_type=contents_type,
-            file_urls=file_urls,
-        )
 
         IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff'}
 
@@ -89,7 +77,7 @@ class StreamChatUsecase:
             contents_type=contents_type,
             file_urls=file_urls,
         )
-
+        user_profile = self.account_repo.find_by_id(account_id)
         # 4. 프롬프트 구성 (동적 지시사항 적용)
         system_instruction = (
             "당신은 '관계 심리 상담 전문가'입니다. 다음 지침을 엄격히 준수하세요:\n"
@@ -98,6 +86,21 @@ class StreamChatUsecase:
             "3. 파일의 형식이 무엇이든, 그 안에 담긴 '의도'와 '감정'을 분석하여 따뜻하게 상담하세요.\n"
             "4. 답변은 항상 공감적이고 전문적인 상담사의 어조를 유지하세요."
         )
+        # ✅ MBTI/성별 정보 추가
+        if user_profile and (user_profile.mbti or user_profile.gender):
+            system_instruction += "사용자의 정보:\n"
+
+            if user_profile.mbti:
+                system_instruction += f"- MBTI: {user_profile.mbti.value}\n"
+                # YAML에서 MBTI 가이드 가져오기
+                from app.config.prompt_loader import prompt_loader
+                mbti_guide = prompt_loader.get_mbti_guide(user_profile.mbti.value)
+                system_instruction += f"\n커뮤니케이션 가이드: {mbti_guide}\n"
+
+            if user_profile.gender:
+                system_instruction += f"- 성별: {user_profile.gender.value}\n"
+
+            system_instruction += "이 사람의 특성을 고려하여 대화하세요.\n\n"
 
         history_payload = conversation.to_llm_payload(self.crypto_service)
         history_context = "".join(

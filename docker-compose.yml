@@ -14,6 +14,8 @@ services:
     restart: always
     networks:
       - backend_net
+    volumes:
+      - /home/ec2-user/keys/cloudfront_private_key.pem:/app/keys/cloudfront_private_key.pem:ro
 
   # 2. MySQL
   mysql:
