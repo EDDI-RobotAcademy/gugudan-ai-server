@@ -1,7 +1,8 @@
 """Auth API router - OAuth endpoints with JWT support."""
-
+import os
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
+from dotenv import load_dotenv
 
 from app.auth.adapter.input.web.dependencies import (
     get_account_usecase,
@@ -24,8 +25,11 @@ from app.auth.domain.entity.session import Session
 from app.common.domain.exceptions import UnsupportedOAuthProviderException
 from app.config.settings import settings
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+load_dotenv()
 
+router = APIRouter(prefix="/auth", tags=["auth"])
+ENV = os.getenv('ENVIRONMENT')
+COOKIE_DOMAIN = None if ENV == "local" else "love-note.me"
 
 @router.get("/providers", response_model=OAuthProvidersResponse)
 async def get_providers(
@@ -157,12 +161,10 @@ async def oauth_login(
             secure=settings.effective_cookie_secure,
             samesite=settings.COOKIE_SAMESITE,
             path="/",
-            domain="love-note.me",
+            domain=COOKIE_DOMAIN,
             max_age=600,  # 10 minutes
         )
 
-        print(f"response {response}")
-        print(f"response.body {response.body}")
         return response
 
     except (UnsupportedOAuthProviderException, ValueError) as e:
@@ -217,7 +219,7 @@ async def oauth_callback(
             httponly=settings.JWT_HTTPONLY,
             secure=settings.effective_cookie_secure,
             samesite=settings.COOKIE_SAMESITE,
-            domain="love-note.me",
+            domain=COOKIE_DOMAIN,
             max_age=max_age,
         )
 
@@ -228,7 +230,7 @@ async def oauth_callback(
             httponly=False,  # Must be readable by JavaScript
             secure=settings.effective_cookie_secure,
             samesite="strict",
-            domain="love-note.me",
+            domain=COOKIE_DOMAIN,
             max_age=max_age,
         )
 
@@ -288,7 +290,7 @@ async def oauth_callback_session(
             httponly=True,
             secure=settings.effective_cookie_secure,
             samesite=settings.COOKIE_SAMESITE,
-            domain="love-note.me",
+            domain=COOKIE_DOMAIN,
             max_age=settings.SESSION_TTL_SECONDS,
         )
 
@@ -299,7 +301,7 @@ async def oauth_callback_session(
             httponly=False,  # Must be readable by JavaScript
             secure=settings.COOKIE_SECURE,
             samesite=settings.COOKIE_SAMESITE,
-            domain="love-note.me",
+            domain=COOKIE_DOMAIN,
             max_age=settings.SESSION_TTL_SECONDS,
         )
 
@@ -363,7 +365,7 @@ async def refresh_token(
         httponly=settings.JWT_HTTPONLY,
         secure=settings.effective_cookie_secure,
         samesite=settings.COOKIE_SAMESITE,
-        domain="love-note.me",
+        domain=COOKIE_DOMAIN,
         max_age=max_age,
     )
 
@@ -374,7 +376,7 @@ async def refresh_token(
         httponly=False,
         secure=settings.effective_cookie_secure,
         samesite="strict",
-        domain="love-note.me",
+        domain=COOKIE_DOMAIN,
         max_age=max_age,
     )
 
