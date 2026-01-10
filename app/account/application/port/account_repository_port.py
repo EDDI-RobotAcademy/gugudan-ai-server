@@ -61,3 +61,15 @@ class AccountRepositoryPort(ABC):
             True if an account exists, False otherwise.
         """
         pass
+
+    @abstractmethod
+    def delete(self, account_id: int) -> bool:
+        """Delete an account by its ID.
+
+        Args:
+            account_id: The account's unique identifier.
+
+        Returns:
+            True if account was deleted, False if not found.
+        """
+        pass
