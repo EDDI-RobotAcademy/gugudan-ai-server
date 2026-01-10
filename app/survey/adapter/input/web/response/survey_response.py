@@ -15,3 +15,9 @@ class CreateSurveyResponse(BaseModel):
     ok: bool
     duplicated: bool = False
     message: str | None = None
+
+
+class SurveyStatusResponse(BaseModel):
+    """설문 완료 여부 확인용 응답"""
+    completed: bool
+    template_version: int | None
