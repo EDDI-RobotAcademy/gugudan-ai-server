@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session
 from app.auth.adapter.input.web.dependencies import (
     get_current_jwt_payload,
     verify_admin_role,
+    get_account_repository,
 )
 from app.auth.application.port.jwt_token_port import TokenPayload
+from app.account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
 from app.config.database.session import get_db_session
 
 from app.inquiry.adapter.input.web.request.create_inquiry_request import CreateInquiryRequest
@@ -104,6 +106,7 @@ def get_my_inquiries(
 def get_inquiry_detail(
     inquiry_id: int,
     jwt_payload: TokenPayload = Depends(get_current_jwt_payload),
+    account_repo: AccountRepositoryImpl = Depends(get_account_repository),
     db: Session = Depends(get_db_session),
 ):
     """문의 상세 조회 (답변 포함)"""
@@ -112,8 +115,9 @@ def get_inquiry_detail(
     usecase = GetInquiryDetailUseCase(inquiry_repo, reply_repo)
 
     try:
-        # 관리자 여부 확인
-        is_admin = hasattr(jwt_payload, 'role') and jwt_payload.role == 'ADMIN'
+        # 관리자 여부 확인 (account를 조회하여 role 확인)
+        account = account_repo.find_by_id(jwt_payload.account_id)
+        is_admin = account and account.is_admin()
 
         result = usecase.execute(
             inquiry_id=inquiry_id,
@@ -192,6 +196,7 @@ def create_inquiry_reply(
     inquiry_id: int,
     request: CreateReplyRequest,
     jwt_payload: TokenPayload = Depends(get_current_jwt_payload),
+    account_repo: AccountRepositoryImpl = Depends(get_account_repository),
     db: Session = Depends(get_db_session),
 ):
     """문의에 답변 작성 (사용자 본인 또는 관리자)"""
@@ -206,7 +211,8 @@ def create_inquiry_reply(
             raise InquiryNotFoundException()
 
         # 권한 확인: 관리자가 아니면 본인의 문의에만 답변 가능
-        is_admin = hasattr(jwt_payload, 'role') and jwt_payload.role == 'ADMIN'
+        account = account_repo.find_by_id(jwt_payload.account_id)
+        is_admin = account and account.is_admin()
         if not is_admin and inquiry.account_id != jwt_payload.account_id:
             raise InquiryAccessDeniedException()
 

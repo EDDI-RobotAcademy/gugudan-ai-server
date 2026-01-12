@@ -54,3 +54,15 @@ class SessionRepositoryPort(ABC):
             True if session was found and extended, False otherwise.
         """
         pass
+
+    @abstractmethod
+    def delete_all_by_account_id(self, account_id: int) -> int:
+        """Delete all sessions for a given account_id.
+
+        Args:
+            account_id: The account ID to delete sessions for.
+
+        Returns:
+            Number of sessions deleted.
+        """
+        pass

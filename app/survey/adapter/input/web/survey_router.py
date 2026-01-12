@@ -1,83 +1,61 @@
 from __future__ import annotations
-import os
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.config.database.session import get_db_session
 from app.survey.infrastructure.repository.survey_repository_impl import SurveyRepositoryImpl
 from app.survey.adapter.input.web.request.create_survey_request import CreateSurveyRequest
+from app.survey.adapter.input.web.response.survey_response import SurveyStatusResponse
+from app.survey.application.usecase.get_survey_questions_usecase import GetSurveyQuestionsUseCase
+from app.survey.application.usecase.get_survey_status_usecase import GetSurveyStatusUseCase
+from app.survey.application.usecase.create_survey_response_usecase import CreateSurveyResponseUseCase
 
 # ✅ 이미 가지고 있는 인증 의존성 사용
 from app.account.adapter.input.web.account_router import get_current_account_id
 
 router = APIRouter(tags=["survey"])
 
-# 정책: 몇 개 메시지 이후 설문 노출할지
-SURVEY_TRIGGER_MESSAGE_COUNT = int(os.getenv("SURVEY_TRIGGER_MESSAGE_COUNT", "5"))
-
 
 @router.get("/questions")
 def get_questions(
     db: Session = Depends(get_db_session),
-    account_id: int = Depends(get_current_account_id),  # ✅ 로그인 유저 확보
+    account_id: int = Depends(get_current_account_id),
 ):
     """설문 표시 여부 및 설문 데이터 반환"""
-    repo = SurveyRepositoryImpl(db)
+    survey_repo = SurveyRepositoryImpl(db)
+    usecase = GetSurveyQuestionsUseCase(survey_repo)
+    
+    return usecase.execute(user_id=account_id)
 
-    # 1) 활성 템플릿 조회
-    template = repo.get_active_template()
-    if not template:
-        return {"show": False, "reason": "no_active_template"}
 
-    # 2) payload 파싱
-    payload = repo.get_active_template_payload()
-    if not payload or not payload.get("questions"):
-        return {"show": False, "reason": "invalid_payload"}
-
-    template_version = template.version
-
-    # 3) 이미 응답했으면 show=false
-    if repo.has_user_responded(user_id=account_id, template_version=template_version):
-        return {"show": False, "reason": "already_responded"}
-
-    # 4) 메시지 카운트 조건 (이상으로 변경)
-    msg_count = repo.get_user_message_count(user_id=account_id)
-    if msg_count < SURVEY_TRIGGER_MESSAGE_COUNT:
-        return {
-            "show": False,
-            "reason": "not_enough_messages",
-            "trigger": SURVEY_TRIGGER_MESSAGE_COUNT,
-            "current": msg_count,
-        }
-
-    # 5) 보여준다
-    return {
-        "show": True,
-        "title": payload.get("title"),
-        "subtitle": payload.get("subtitle"),
-        "footer": payload.get("footer"),
-        "version": template_version,
-        "questions": payload.get("questions"),
-    }
+@router.get("/status", response_model=SurveyStatusResponse)
+def get_survey_status(
+    db: Session = Depends(get_db_session),
+    account_id: int = Depends(get_current_account_id),
+):
+    """설문 완료 여부 확인 (화면에서 활성화/비활성화용)"""
+    survey_repo = SurveyRepositoryImpl(db)
+    usecase = GetSurveyStatusUseCase(survey_repo)
+    
+    result = usecase.execute(user_id=account_id)
+    return SurveyStatusResponse(
+        completed=result["completed"],
+        template_version=result["template_version"],
+    )
 
 
 @router.post("/responses")
 def create_response(
-        req: CreateSurveyRequest,
-        db: Session = Depends(get_db_session),
-        account_id: int = Depends(get_current_account_id),
+    req: CreateSurveyRequest,
+    db: Session = Depends(get_db_session),
+    account_id: int = Depends(get_current_account_id),
 ):
     """설문 응답 저장"""
-    repo = SurveyRepositoryImpl(db)
-    tpl = repo.get_active_template()
-
-    if not tpl:
-        return {"ok": False, "duplicated": False, "message": "설문 템플릿이 없습니다."}
-
-    ok, duplicated, message = repo.save_survey_response(
+    survey_repo = SurveyRepositoryImpl(db)
+    usecase = CreateSurveyResponseUseCase(survey_repo)
+    
+    return usecase.execute(
         user_id=account_id,
-        template_version=tpl.version,
         answers=req.answers,
     )
-    return {"ok": ok, "duplicated": duplicated, "message": message}
