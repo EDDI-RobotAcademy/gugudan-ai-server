@@ -105,6 +105,19 @@ class AccountRepositoryImpl(AccountRepositoryPort):
             is not None
         )
 
+    def delete(self, account_id: int) -> bool:
+        """Delete an account by its ID."""
+        model = (
+            self._session.query(AccountModel)
+            .filter(AccountModel.id == account_id)
+            .first()
+        )
+        if model:
+            self._session.delete(model)
+            self._session.commit()
+            return True
+        return False
+
 
     @staticmethod
     def _to_entity(model: AccountModel) -> Account:

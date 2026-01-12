@@ -88,3 +88,38 @@ class SessionRepositoryImpl(SessionRepositoryPort):
             return True
 
         return False
+
+    def delete_all_by_account_id(self, account_id: int) -> int:
+        """Delete all sessions for a given account_id from Redis.
+
+        Args:
+            account_id: The account ID to delete sessions for.
+
+        Returns:
+            Number of sessions deleted.
+        """
+        pattern = f"{self.KEY_PREFIX}*"
+        cursor = 0
+        deleted_count = 0
+
+        while True:
+            cursor, keys = self._redis.scan(cursor=cursor, match=pattern, count=100)
+
+            for key in keys:
+                try:
+                    # Get session data
+                    data = self._redis.get(key)
+                    if data:
+                        session_dict = json.loads(data)
+                        # Check if this session belongs to the account
+                        if session_dict.get("account_id") == account_id:
+                            self._redis.delete(key)
+                            deleted_count += 1
+                except (json.JSONDecodeError, KeyError, ValueError):
+                    # Skip invalid session data
+                    continue
+
+            if cursor == 0:
+                break
+
+        return deleted_count

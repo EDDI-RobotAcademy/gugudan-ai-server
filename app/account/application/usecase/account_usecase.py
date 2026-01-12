@@ -134,3 +134,26 @@ class AccountUseCase:
             account.mbti = mbti
 
         return self._repository.save(account)
+
+    def withdraw_account(self, account_id: int) -> bool:
+        """Withdraw an account.
+
+        Note: This method only deletes the account itself.
+        All associated data deletion should be handled by the calling service
+        before calling this method.
+
+        Args:
+            account_id: The account's unique identifier.
+
+        Returns:
+            True if account was successfully withdrawn, False if account not found.
+
+        Raises:
+            AccountNotFoundException: If account doesn't exist.
+        """
+        account = self._repository.find_by_id(account_id)
+        if not account:
+            raise AccountNotFoundException(account_id)
+
+        # Delete the account (this will trigger CASCADE for inquiry and inquiry_reply)
+        return self._repository.delete(account_id)

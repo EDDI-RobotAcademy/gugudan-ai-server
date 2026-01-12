@@ -1,44 +1,54 @@
 from __future__ import annotations
 
 import json
+from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, func
 
+from app.survey.application.port.survey_repository_port import SurveyRepositoryPort
 from app.survey.infrastructure.orm.survey_model import SurveyTemplateModel
 from app.survey.infrastructure.orm.survey_response_orm import SurveyResponseOrm
 from app.survey.infrastructure.orm.survey_response_item_orm import SurveyResponseItemOrm
 from app.conversation.infrastructure.orm.chat_message_orm import ChatMessageOrm
 
 
-class SurveyRepositoryImpl:
+class SurveyRepositoryImpl(SurveyRepositoryPort):
     def __init__(self, db: Session):
         self.db = db
 
-    def get_active_template(self) -> SurveyTemplateModel | None:
-        return (
+    def get_active_template_version(self) -> Optional[int]:
+        """Get active template version number."""
+        template = (
             self.db.query(SurveyTemplateModel)
             .filter(SurveyTemplateModel.is_active == True)  # noqa: E712
             .order_by(SurveyTemplateModel.version.desc())
             .first()
         )
+        return template.version if template else None
 
-    def get_active_template_payload(self) -> dict | None:
-        tpl = self.get_active_template()
-        if not tpl:
+    def get_active_template_payload(self) -> Optional[dict]:
+        template = (
+            self.db.query(SurveyTemplateModel)
+            .filter(SurveyTemplateModel.is_active == True)  # noqa: E712
+            .order_by(SurveyTemplateModel.version.desc())
+            .first()
+        )
+        
+        if not template:
             return None
 
         try:
-            questions = json.loads(tpl.questions_json) if tpl.questions_json else []
+            questions = json.loads(template.questions_json) if template.questions_json else []
         except Exception:
             questions = []
 
         return {
             "fallback": False,
-            "version": tpl.version,
-            "title": tpl.title,
-            "subtitle": tpl.subtitle,
-            "footer": tpl.footer,
+            "version": template.version,
+            "title": template.title,
+            "subtitle": template.subtitle,
+            "footer": template.footer,
             "questions": questions,
         }
 
@@ -55,10 +65,10 @@ class SurveyRepositoryImpl:
 
     def save_survey_response(
         self,
-        user_id: int | None,
+        user_id: Optional[int],
         template_version: int,
         answers: dict[str, str],
-    ) -> tuple[bool, bool, str | None]:
+    ) -> tuple[bool, bool, Optional[str]]:
         """
         return (ok, duplicated, message)
         """
@@ -101,4 +111,5 @@ class SurveyRepositoryImpl:
             .where(ChatMessageOrm.role == "USER")
         )
         return int(self.db.execute(q).scalar() or 0)
+
 
